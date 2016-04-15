@@ -1,5 +1,7 @@
-import lib
-reload(lib)
+# [h] Compare OTFs
+
+import _lib
+reload(_lib)
 
 import os
 
@@ -9,7 +11,7 @@ from vanilla.dialogs import getFile, getFolder
 from mojo.UI import HTMLView
 from mojo.extensions import getExtensionDefault, setExtensionDefault
 
-from lib import CompareOTFs
+from _lib import CompareOTFs
 
 #---------
 # objects
@@ -18,7 +20,7 @@ from lib import CompareOTFs
 class CompareOTFsDialog(object):
 
     padding         = 10
-    width           = 960
+    width           = 800
     height          = 640
     text_height     = 23
     button_width    = 90
@@ -38,7 +40,7 @@ class CompareOTFsDialog(object):
         ('BASE', 'BASE', False),
         ('CBDT', 'CBDT', False),
         ('CBLC', 'CBLC', False),
-        ('CFF ', 'CFF_', True ),
+        ('CFF ', 'CFF_', False),
         ('COLR', 'COLR', False),
         ('CPAL', 'CPAL', False),
         ('DSIG', 'DSIG', False),
@@ -54,7 +56,7 @@ class CompareOTFsDialog(object):
         # ('LTSH', 'LTSH', False),
         ('MATH', 'MATH', False),
         ('META', 'META', False),
-        ('OS/2', 'OS_2', True ),
+        ('OS/2', 'OS_2', False),
         ('SING', 'SING', False),
         ('SVG ', 'SVG_', False),
         # ('TSIB', 'TSIB', False),
@@ -71,7 +73,7 @@ class CompareOTFsDialog(object):
         ('VDMX', 'VDMX', False),
         ('VORG', 'VORG', False),
         ('avar', 'avar', False),
-        ('cmap', 'cmap', True ),
+        ('cmap', 'cmap', False),
         ('cvt ', 'cvt_', False),
         ('feat', 'feat', False),
         ('fpgm', 'fpgm', False),
@@ -80,8 +82,8 @@ class CompareOTFsDialog(object):
         ('glyf', 'glyf', False),
         ('gvar', 'gvar', False),
         ('hdmx', 'hdmx', False),
-        ('head', 'head', True ),
-        ('hhea', 'hhea', True ),
+        ('head', 'head', True),
+        ('hhea', 'hhea', False),
         ('hmtx', 'hmtx', False),
         ('kern', 'kern', False),
         ('loca', 'loca', False),

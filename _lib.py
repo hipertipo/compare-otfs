@@ -4,178 +4,250 @@
 
 import os
 import difflib
+import codecs
 
-import ElementTree
-reload(ElementTree)
 from ElementTree import parse
 
 from fontTools.ttx import TTFont
 from fontTools import subset
 
-HEAD = '''\
+HEAD = u'''\
 <head>
-    <meta charset="UTF-8">
-    <title>CompareOTFs</title>
-    <style type="text/css">
-        body {
-          font-size: 0.9em;
-        }
-        colgroup, tbody, th, table, tr {
-          border: none;
-          border-collapse: collapse;
-        }
-        a {
-          text-decoration: none;
-          color: #888;
-        }
-        a:hover {
-          text-decoration: none;
-          color: blue;
-        }
-        table.diff {
-          font-family: 'Menlo', 'Consolas', monospaced;
-          font-weight: bold;
-          margin-bottom: 0.65em;
-          border: 1px solid #CCC;
-        }
-        table.diff td, table.diff th {
-          padding: 0.3em 0.7em;
-          line-height: 1.3em;
-          border: 1px solid #CCC;
-        }
-        table.diff tr:not(:last-child) {
-          border-bottom: 1px solid #CCC;
-        }
-        table.main {
-          width: 100%;
-        }
-        #main_menu {
-          float:left;
-          margin-right : 0.65em;
-        }
-        .top {
-          font-weight: normal;
-        }
-        td.diff_header, td.diff_next, .selected, th {
-          background-color: #eeeeee;
-          color: #888;
-        }
-        td.diff_header, td.diff_next {
-          font-weight: normal;
-        }
-        .diff_add  {
-          background-color: #aaffaa;
-        }
-        .diff_chg  {
-          background-color: #ffff77;
-        }
-        .diff_sub  {
-          background-color: #ffaaaa;
-        }
-    </style>
-</head>'''
-
-LEGENDS = '''
-    <table class='diff' id="Legends">
-        <tr>
-            <!-- <td>legends</td> -->
-            <td class="diff_add">Added</td>
-            <td class="diff_chg">Changed</td>
-            <td class="diff_sub">Deleted</td>
-        </tr>
-    </table>
+<meta charset="UTF-8">
+<title>CompareOTFs</title>
+<style type="text/css">
+* {
+  padding: 0;
+  margin: 0;
+}
+body {
+  font-size: 0.9em;
+  padding: 0 0.5em;
+}
+colgroup, tbody, th, table, tr {
+  border: none;
+  border-collapse: collapse;
+}
+a {
+  text-decoration: none;
+  color: #888;
+}
+a:hover {
+  text-decoration: none;
+  color: blue;
+}
+table {
+    margin: 0;
+    padding: 0;
+}
+table.diff {
+  font-family: 'Menlo', 'Consolas', monospaced;
+  font-weight: bold;
+  margin-bottom: 0.65em;
+  border: 1px solid #CCC;
+}
+table.diff td, table.diff th {
+  padding: 0.3em 0.7em;
+  line-height: 1.3em;
+  border: 1px solid #CCC;
+}
+table.main td:nth-child(1), table.main td:nth-child(4) {
+    width: 4%;
+}
+table.main td:nth-child(2), table.main td:nth-child(5) {
+    width: 6%;
+    text-align: right;
+}
+table.main td:nth-child(3), table.main td:nth-child(6) {
+    width: 40%;
+}
+table.main tr:not(:last-child) {
+  border-bottom: 1px solid #CCC;
+}
+table.main {
+  width: 100%;
+}
+.top {
+  font-weight: normal;
+}
+#menu table {
+  float: left;
+  margin: 0.5em 0.5em 0.5em 0;
+}
+#menu {
+  position: -webkit-sticky;
+  position: -moz-sticky;
+  position: -o-sticky;
+  position: -ms-sticky;
+  position: sticky;
+  top: 0;
+  left: 0;
+  background: #FFF;
+  margin: 0;
+  padding: 0.5;
+  height: 3em;
+}
+td.diff_header, td.diff_next, .selected, th {
+  background-color: #eeeeee;
+  color: #888;
+}
+td.diff_header, td.diff_next {
+  font-weight: normal;
+}
+.diff_add  {
+  background-color: #aaffaa;
+}
+.diff_chg  {
+  background-color: #ffff77;
+}
+.diff_sub  {
+  background-color: #ffaaaa;
+}
+</style>
+</head>
 '''
 
-DOCSTRING = '''\
+LEGENDS = u'''\
+<table class='diff' id="caption">
+<tr>
+<td class="diff_add">added</td>
+<td class="diff_chg">changed</td>
+<td class="diff_sub">deleted</td>
+</tr>
+</table>
+'''
+
+DOCSTRING = u'''\
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
-          "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">'''
+"http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+'''
 
 # functions
 
-def extract_tables(otf_path, folder, tables):
+def extract_tables(otf_path, folder, tables, n=None):
     """
     Extract font tables from an OpenType font.
 
     """
     ttfont = TTFont(otf_path)
     info_file = os.path.splitext(os.path.split(otf_path)[1])[0]
-    info_path = os.path.join(folder, '%s.xml' % info_file)
+
+    if n is not None:
+        info_path = os.path.join(folder, '%s_%s.xml' % (n, info_file))
+
+    else:
+        info_path = os.path.join(folder, '%s.xml' % info_file)
+
     ttfont.saveXML(info_path, tables=tables, splitTables=True)
+    return info_path
 
 def add_main_menu(html, tables, table_codes, selected=0):
 
-    sections = {
-        'overview' : 'index.html',
-        'tables'   : sorted(tables.keys())[0] + '.html',
-    }
-
     if len(tables):
-        find = '<body>\n'
-        replace  = '<body>\n'
-        replace += '<table class="diff" id="main_menu">\n'
-        replace += '<tr>\n'
+
+        sections = {
+            'overview' : 'index.html',
+            'tables'   : sorted(tables.keys())[0] + '.html',
+        }
+
+        find     = u'<body>\n'
+        replace  = u'<body>\n'
+        replace += u'<table class="diff">\n'
+        replace += u'<tr>\n'
+
         for i, section in enumerate(sections.keys()):
+
             if i == selected:
-                replace += '<td class="selected"><a href="%s">%s</td>\n' % (sections[section], section)
+                replace += u'<td class="selected"><a href="%s">%s</a></td>\n' % (sections[section], section)
+
             else:
-                replace += '<td><a href="%s">%s</td>\n' % (sections[section], section)
-        replace += '</tr>\n'
-        replace += '</table>\n'
+                replace += u'<td><a href="%s">%s</a></td>\n' % (sections[section], section)
+
+        replace += u'</tr>\n'
+        replace += u'</table>\n'
         html = html.replace(find, replace)
 
     return html
 
 def add_tables_menu(html, tables, table_codes, selected=None):
-    # add menu
+
     if len(tables):
         find = '<body>\n'
         replace  = '<body>\n'
-        replace += '<table class="diff" id="menu">\n'
+        replace += '<table class="diff">\n'
         replace += '<tr>\n'
+
         for table in sorted(tables.keys()):
             if table  == selected:
                 replace += '<td class="selected">%s</td>\n' % table_codes[table]
             else:
                 replace += '<td><a href="%s.html">%s</a></td>\n' % (table, table_codes[table])
+
         replace += '</tr>\n'
         replace += '</table>\n'
         diff_html = html.replace(find, replace)
-    return diff_html
+
+        return diff_html
 
 def add_index_menu(html, tables, table_codes):
-    # add menu
+
     if len(tables):
-        find = '<body>\n'
+        find     = '<body>\n'
         replace  = '<body>\n'
         replace += '<a name="top"></a>\n'
-        replace += '<table class="diff" id="menu">\n'
+        replace += '<table class="diff">\n'
         replace += '<tr>\n'
+
         for table in sorted(tables.keys()):
             replace += '<td><a href="#%s">%s</a></td>\n' % (table, table_codes[table])
+
         replace += '</tr>\n'
         replace += '</table>\n'
         diff_html = html.replace(find, replace)
+
+        return diff_html
+
+def add_menu_wrapper(html):
+    # add opening div tag
+    find       = '</style>\n</head>\n<body>\n<table'
+    replace    = '</style>\n</head>\n<body>\n<div id="menu">\n<table'
+    diff_html  = html.replace(find, replace)
+    # add closing div tag
+    find       = u'</table>\n<table class="diff main"'
+    replace    = u'</table>\n</div>\n<table class="diff main"'
+    diff_html_ = diff_html.replace(find, replace)
+    # done
+    return diff_html_
+
+def fix_captions_table(html):
+    start     = html.find(u'<table class="diff" summary="Legends">')
+    end       = html.find(u'</table>\n</body>')
+    find      = html[start:end+8]
+    replace   = LEGENDS
+    diff_html = html.replace(find, replace)
     return diff_html
 
 def fix_html_diff(diff_html, table_codes, tables, selected=None, headers=None):
-    diff_html = diff_html.replace('&nbsp;', ' ')
-    diff_html = diff_html.replace('nowrap="nowrap"', '')
+
+    diff_html = clean_up_html(diff_html)
+    diff_html = diff_html.replace(u'&nbsp;', u' ')
+    diff_html = diff_html.replace(u'nowrap="nowrap"', u'')
 
     # fix doctype
     find      = DOCSTRING
-    replace   = "<!DOCTYPE html>"
+    replace   = u"<!DOCTYPE html>\n"
     diff_html = diff_html.replace(find, replace)
 
     # fix stylesheet
-    start     = diff_html.find('<head>')
-    end       = diff_html.find('</head>')
+    start     = diff_html.find(u'<head>')
+    end       = diff_html.find(u'</head>')
     find      = diff_html[start:end+7]
     replace   = HEAD
     diff_html = diff_html.replace(find, replace)
 
     # add 'main' class
-    find      = 'class="diff" id="difflib'
-    replace   = 'class="diff main" id="difflib'
+    find      = u'class="diff" id="difflib'
+    replace   = u'class="diff main" id="difflib'
     diff_html = diff_html.replace(find, replace)
 
     # add menus
@@ -190,15 +262,20 @@ def fix_html_diff(diff_html, table_codes, tables, selected=None, headers=None):
         replace += '<tr><th></th><th></th><th>%s</th><th></th><th></th><th>%s</th></tr>\n' % (file1, file2)
         diff_html = diff_html.replace(find, replace)
 
-    # fix legends
-    start     = diff_html.find('<table class="diff" summary="Legends">')
-    end       = diff_html.find('</table>\n</body>')
-    find      = diff_html[start:end+8]
-    replace   = LEGENDS
-    diff_html = diff_html.replace(find, replace)
+    # etc
+    diff_html = fix_captions_table(diff_html)
+    diff_html = clean_up_html(diff_html)
+    diff_html = add_menu_wrapper(diff_html)
 
-    # done
     return diff_html
+
+def clean_up_html(html):
+    _html = u''
+    for line in html.split('\n'):
+        line = line.strip()
+        if len(line) > 0:
+            _html += u'%s\n' % line
+    return _html
 
 #---------
 # objects
@@ -304,8 +381,8 @@ class CompareOTFs(object):
         diffs = {}
         for table in self.tables:
             font1, font2 = self.tables[table].keys()
-            ttx1 = open(self.tables[table][font1], mode='r').readlines()
-            ttx2 = open(self.tables[table][font2], mode='r').readlines()
+            ttx1 = codecs.open(self.tables[table][font1], mode='r', encoding='utf-8').readlines()
+            ttx2 = codecs.open(self.tables[table][font2], mode='r', encoding='utf-8').readlines()
 
             if self.diff_mode == 'ndiff':
                 diff = difflib.ndiff(ttx1, ttx2)
@@ -323,8 +400,8 @@ class CompareOTFs(object):
         htmls = {}
         for table in self.tables:
             font1, font2 = self.tables[table].keys()
-            ttx1 = open(self.tables[table][font1], mode='r').readlines()
-            ttx2 = open(self.tables[table][font2], mode='r').readlines()
+            ttx1 = codecs.open(self.tables[table][font1], mode='r', encoding='utf-8').readlines()
+            ttx2 = codecs.open(self.tables[table][font2], mode='r', encoding='utf-8').readlines()
 
             D = difflib.HtmlDiff()
             diff_html = D.make_file(ttx1, ttx2)
@@ -346,8 +423,8 @@ class CompareOTFs(object):
         if clear:
             self.clear_folder()
 
-        extract_tables(self.otf1, self.folder, self.table_names)
-        extract_tables(self.otf2, self.folder, self.table_names)
+        extract_tables(self.otf1, self.folder, self.table_names, n=1)
+        extract_tables(self.otf2, self.folder, self.table_names, n=2)
 
     def save_html(self, index=True, pages=True):
 
@@ -357,32 +434,42 @@ class CompareOTFs(object):
             html  = u'<!DOCTYPE html>\n'
             html += u'<html>\n'
             html += HEAD
-            html += u'\t<body>\n'
+            html += u'<body>\n'
+
             for table in sorted(self.diffs.keys()):
-                html += u'\t\t<table class="diff main">\n'
-                html += u'\t\t\t<tr><th><a name="%s"></a>%s&nbsp;<a class="top" href="#top">[top]</a></th></tr>\n' % (table, self.table_codes[table])
+
+                html += u'<table class="diff main">\n'
+                html += u'<tr><th><a name="%s"></a>%s&nbsp;<a class="top" href="#top">[top]</a></th></tr>\n' % (table, self.table_codes[table])
+
                 for line in self.diffs[table].split('\n'):
                     if not len(line.strip()) == 0:
 
+                        # line = line.replace('&', '&amp;')
                         line = line.replace(u'<', u'&lt;')
                         line = line.replace(u'>', u'&gt;')
-                        # line = line.replace('&', '&amp;')
 
                         if line.startswith('+'):
-                            html += u'\t\t\t<tr><td class="diff_add">%s</td></tr>\n' % line
-                        elif line.startswith('-'):
-                            html += u'\t\t\t<tr><td class="diff_sub">%s</td></tr>\n' % line
-                        else:
-                            html += u'\t\t\t<tr><td>%s</td></tr>\n' % line
+                            html += u'<tr><td class="diff_add">%s</td></tr>\n' % line
 
-                html += u'\t\t</table>\n'
-            html += u'\t</body>\n'
+                        elif line.startswith('-'):
+                            html += u'<tr><td class="diff_sub">%s</td></tr>\n' % line
+
+                        else:
+                            html += u'<tr><td>%s</td></tr>\n' % line
+
+                html += u'</table>\n'
+
+            html += u'</body>\n'
 
             html = add_index_menu(html, self.tables, self.table_codes)
             html = add_main_menu(html, self.tables, self.table_codes, selected=0)
 
+            html = clean_up_html(html)
+            html = add_menu_wrapper(html)
+
             html_path = os.path.join(self.folder, 'index.html')
-            html_file = open(html_path, mode='w')
+            html_file = codecs.open(html_path, mode='w', encoding='utf-8')
+
             print 'saving %s...' % html_path
             html_file.write(html)
             html_file.close()
@@ -391,11 +478,11 @@ class CompareOTFs(object):
         if pages:
             for table in self.html.keys():
                 html_path = os.path.join(self.folder, '%s.html' % table)
-                html_file = open(html_path, mode='w')
+                html_file = codecs.open(html_path, mode='w', encoding='utf-8')
+
                 print 'saving %s...' % html_path
                 html_file.write(self.html[table])
                 html_file.close()
 
     def compare(self):
         self.extract_tables()
-
