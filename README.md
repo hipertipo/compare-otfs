@@ -5,8 +5,8 @@ A [RoboFont](https://robofont.com/) extension to diff-compare two [OpenType](htt
 
 ![](screenshot.png)
 
-- uses [fontTools](https://github.com/behdad/fonttools/) to extract font tables as .ttx
-- uses Python’s [difflib](https://docs.python.org/2/library/difflib.html) to make a diff between tables
+- Uses [fontTools](https://github.com/behdad/fonttools/) to extract font tables as `.ttx` files.
+- Uses Python’s [difflib](https://docs.python.org/2/library/difflib.html) to make a diff between font tables.
 
 Installation
 ------------
@@ -19,7 +19,7 @@ Installation
 Using the extension
 -------------------
 
-0. Use the *Extensions* to open the *CompareOTFs* dialog.
+0. Use the *Extensions* menu in RoboFont to open the *CompareOTFs* dialog.
 1. Use the *get font…* buttons to select two OpenType fonts to compare.
 2. Use the *get folder…* button to choose a folder for the comparison output.
 3. Use the *select tables…* button to reveal a drawer with checkboxes for all supported OpenType tables.
