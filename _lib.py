@@ -22,7 +22,7 @@ HEAD = u'''\
 }
 body {
   font-size: 0.9em;
-  padding: 0 0.5em;
+  padding: 0 0.7em;
 }
 colgroup, tbody, th, table, tr {
   border: none;
@@ -51,6 +51,17 @@ table.diff td, table.diff th {
   line-height: 1.3em;
   border: 1px solid #CCC;
 }
+/*
+table.main tr > th {
+  position: -webkit-sticky;
+  position: -moz-sticky;
+  position: -o-sticky;
+  position: -ms-sticky;
+  position: sticky;
+  top: 3.4em;
+  left: 0;
+}
+*/
 table.main td:nth-child(1), table.main td:nth-child(4) {
     width: 4%;
 }
@@ -67,12 +78,9 @@ table.main tr:not(:last-child) {
 table.main {
   width: 100%;
 }
-.top {
-  font-weight: normal;
-}
 #menu table {
   float: left;
-  margin: 0.5em 0.5em 0.5em 0;
+  margin: 0.7em 0.7em 0.7em 0;
 }
 #menu {
   position: -webkit-sticky;
@@ -84,9 +92,10 @@ table.main {
   left: 0;
   background: #FFF;
   margin: 0;
-  padding: 0.5;
-  height: 3em;
+  padding: 0.7;
+  height: 3.4em;
 }
+#caption {}
 td.diff_header, td.diff_next, .selected, th {
   background-color: #eeeeee;
   color: #888;
@@ -108,13 +117,15 @@ td.diff_header, td.diff_next {
 '''
 
 LEGENDS = u'''\
-<table class='diff' id="caption">
+<div id="caption">
+<table class='diff'>
 <tr>
 <td class="diff_add">added</td>
 <td class="diff_chg">changed</td>
 <td class="diff_sub">deleted</td>
 </tr>
 </table>
+</div>
 '''
 
 DOCSTRING = u'''\
@@ -194,7 +205,7 @@ def add_index_menu(html, tables, table_codes):
     if len(tables):
         find     = '<body>\n'
         replace  = '<body>\n'
-        replace += '<a name="top"></a>\n'
+        # replace += '<a name="top"></a>\n'
         replace += '<table class="diff">\n'
         replace += '<tr>\n'
 
@@ -367,20 +378,21 @@ class CompareOTFs(object):
     def tables(self):
         tables = {}
         for f in os.listdir(self.folder):
-            if len(f.split('.')) == 3:
-                font, table, _ = f.split('.')
-                if not tables.has_key(table):
-                    tables[table] = {}
-                if not tables[table].has_key(font):
-                    file_path = os.path.join(self.folder, f)
-                    tables[table]['%s.otf' % font] = file_path
+            if os.path.splitext(f)[1] == '.xml':
+                if len(f.split('.')) == 3:
+                    font, table, _ = f.split('.')
+                    if not tables.has_key(table):
+                        tables[table] = {}
+                    if not tables[table].has_key(font):
+                        file_path = os.path.join(self.folder, f)
+                        tables[table]['%s.otf' % font] = file_path
         return tables
 
     @property
     def diffs(self):
         diffs = {}
         for table in self.tables:
-            font1, font2 = self.tables[table].keys()
+            font1, font2 = sorted(self.tables[table].keys())
             ttx1 = codecs.open(self.tables[table][font1], mode='r', encoding='utf-8').readlines()
             ttx2 = codecs.open(self.tables[table][font2], mode='r', encoding='utf-8').readlines()
 
@@ -399,7 +411,7 @@ class CompareOTFs(object):
 
         htmls = {}
         for table in self.tables:
-            font1, font2 = self.tables[table].keys()
+            font1, font2 = sorted(self.tables[table].keys())
             ttx1 = codecs.open(self.tables[table][font1], mode='r', encoding='utf-8').readlines()
             ttx2 = codecs.open(self.tables[table][font2], mode='r', encoding='utf-8').readlines()
 
@@ -428,6 +440,11 @@ class CompareOTFs(object):
 
     def save_html(self, index=True, pages=True):
 
+        print 'comparing .otfs...\n'
+
+        print '\totf 1:\n\t%s\n' % self.otf1
+        print '\totf 2:\n\t%s\n' % self.otf2
+
         # save index
         if index:
 
@@ -439,7 +456,7 @@ class CompareOTFs(object):
             for table in sorted(self.diffs.keys()):
 
                 html += u'<table class="diff main">\n'
-                html += u'<tr><th><a name="%s"></a>%s&nbsp;<a class="top" href="#top">[top]</a></th></tr>\n' % (table, self.table_codes[table])
+                html += u'<tr><th><a name="%s">%s</a></th></tr>\n' % (table, self.table_codes[table]) # &nbsp;<a class="top" href="#top">[top]</a>
 
                 for line in self.diffs[table].split('\n'):
                     if not len(line.strip()) == 0:
@@ -470,7 +487,7 @@ class CompareOTFs(object):
             html_path = os.path.join(self.folder, 'index.html')
             html_file = codecs.open(html_path, mode='w', encoding='utf-8')
 
-            print 'saving %s...' % html_path
+            print '\tsaving %s...' % os.path.split(html_path)[1]
             html_file.write(html)
             html_file.close()
 
@@ -480,9 +497,12 @@ class CompareOTFs(object):
                 html_path = os.path.join(self.folder, '%s.html' % table)
                 html_file = codecs.open(html_path, mode='w', encoding='utf-8')
 
-                print 'saving %s...' % html_path
+                print '\tsaving %s...' % os.path.split(html_path)[1]
                 html_file.write(self.html[table])
                 html_file.close()
+
+        print
+        print '...done.\n'
 
     def compare(self):
         self.extract_tables()
