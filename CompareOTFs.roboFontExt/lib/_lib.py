@@ -9,7 +9,6 @@ import codecs
 from ElementTree import parse
 
 from fontTools.ttx import TTFont
-from fontTools import subset
 
 HEAD = u'''\
 <head>

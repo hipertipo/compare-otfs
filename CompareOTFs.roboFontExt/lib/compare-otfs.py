@@ -298,15 +298,15 @@ class CompareOTFsDialog(object):
         otf_2  = getExtensionDefault('%s.otf_2'  % self.extension_key, None)
         folder = getExtensionDefault('%s.folder' % self.extension_key, None)
 
-        if os.path.exists(otf_1):
+        if otf_1 is not None and os.path.exists(otf_1):
             self.otf_1 = otf_1
             self.w.otf_1_status.set('%s' % unichr(10003))
 
-        if os.path.exists(otf_2):
+        if otf_2 is not None and os.path.exists(otf_2):
             self.otf_2 = otf_2
             self.w.otf_2_status.set('%s' % unichr(10003))
 
-        if os.path.exists(folder):
+        if folder is not None and os.path.exists(folder):
             self.folder = folder
             self.w.folder_status.set('%s' % unichr(10003))
 
