@@ -6,7 +6,7 @@
 	<array>
 		<dict>
 			<key>path</key>
-			<string>compare-otfs.py</string>
+			<string>compareOTFs.py</string>
 			<key>preferredName</key>
 			<string>CompareOTFs</string>
 			<key>shortKey</key>
@@ -30,8 +30,8 @@
 	<key>requiresVersionMinor</key>
 	<string>5</string>
 	<key>timeStamp</key>
-	<real>1461505790.0970149</real>
+	<real>1583232226.6316459</real>
 	<key>version</key>
-	<string>0.11</string>
+	<string>0.2</string>
 </dict>
 </plist>

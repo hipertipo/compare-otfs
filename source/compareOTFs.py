@@ -1,7 +1,6 @@
-# [h] Compare OTFs
-
-import _lib
-reload(_lib)
+from importlib import reload
+import compareOTFs_lib
+reload(compareOTFs_lib)
 
 import os
 
@@ -11,13 +10,13 @@ from vanilla.dialogs import getFile, getFolder
 from mojo.UI import HTMLView
 from mojo.extensions import getExtensionDefault, setExtensionDefault
 
-from _lib import CompareOTFs
+from compareOTFs_lib import CompareOTFs
 
 #---------
 # objects
 #---------
 
-class CompareOTFsDialog(object):
+class CompareOTFsDialog:
 
     padding         = 10
     width           = 800
@@ -28,7 +27,7 @@ class CompareOTFsDialog(object):
     drawer_width    = 180
 
     title           = "CompareOTFs"
-    extension_key   = 'com.hipertipo.compareotfs'
+    extension_key   = 'com.hipertipo.compareOTFs'
 
     otf_1           = None
     otf_2           = None
@@ -118,9 +117,7 @@ class CompareOTFsDialog(object):
             callback=self.get_otf_1_callback)
         x += self.button_width
         self.w.otf_1_status = TextBox(
-            (x+5, y+3, 80, self.text_height),
-            '%s' % unichr(10007)
-        )
+            (x+5, y+3, 80, self.text_height), '✗')
 
         # otf 2
 
@@ -131,10 +128,7 @@ class CompareOTFsDialog(object):
             sizeStyle='small',
             callback=self.get_otf_2_callback)
         x += self.button_width
-        self.w.otf_2_status = TextBox(
-            (x+5, y+3, 80, self.text_height),
-            '%s' % unichr(10007)
-        )
+        self.w.otf_2_status = TextBox((x+5, y+3, 80, self.text_height), '✗')
 
         # output folder
 
@@ -145,17 +139,14 @@ class CompareOTFsDialog(object):
             sizeStyle='small',
             callback=self.get_folder_callback)
         x += self.button_width
-        self.w.folder_status = TextBox(
-            (x+5, y+3, 80, self.text_height),
-            '%s' % unichr(10007)
-        )
+        self.w.folder_status = TextBox((x+5, y+3, 80, self.text_height), '✗')
 
         # open drawer button
 
         x += self.padding + self.text_height * 2
         self.w.drawer_button = Button(
             (x, y, self.button_width_2, self.text_height),
-            u"select tables %s" % unichr(8674),
+            "select tables ⇢",
             sizeStyle='small',
             callback=self.open_drawer_callback)
 
@@ -168,18 +159,13 @@ class CompareOTFsDialog(object):
             sizeStyle='small',
             callback=self.compare_fonts_callback)
         x += self.button_width_2
-        self.w.compare_status = TextBox(
-            (x+5, y+3, 80, self.text_height),
-            '%s' % unichr(10007)
-        )
+        self.w.compare_status = TextBox((x+5, y+3, 80, self.text_height), '✗')
 
         # HTMLView
 
         x  = 0
         y += self.text_height + self.padding
-        self.w.html_view = HTMLView(
-            (x, y, -0, -0)
-        )
+        self.w.html_view = HTMLView((x, y, -0, -0))
         # self.w.html_view.setHTMLPath()
 
         # drawer with tables
@@ -228,7 +214,7 @@ class CompareOTFsDialog(object):
                 self.otf_1 = otf_1
                 if os.path.exists(self.otf_1):
                     setExtensionDefault('%s.otf_1' % self.extension_key, self.otf_1)
-                    self.w.otf_1_status.set('%s' % unichr(10003))
+                    self.w.otf_1_status.set('✓')
 
     def get_otf_2_callback(self, sender):
         otf_2 = getFile(
@@ -241,7 +227,7 @@ class CompareOTFsDialog(object):
                 self.otf_2 = otf_2
                 if os.path.exists(self.otf_2):
                     setExtensionDefault('%s.otf_2' % self.extension_key, self.otf_2)
-                    self.w.otf_2_status.set('%s' % unichr(10003))
+                    self.w.otf_2_status.set('✓')
 
     def get_folder_callback(self, sender):
         folder = getFolder(
@@ -254,21 +240,21 @@ class CompareOTFsDialog(object):
                 self.folder = folder
                 if os.path.exists(self.folder):
                     setExtensionDefault('%s.folder' % self.extension_key, self.folder)
-                    self.w.folder_status.set('%s' % unichr(10003))
+                    self.w.folder_status.set('✓')
 
     def open_drawer_callback(self, sender):
         self.d.toggle()
         if self.drawer_open:
             self.drawer_open = False
-            self.w.drawer_button.setTitle(u"select tables %s" % unichr(8674))
+            self.w.drawer_button.setTitle("select tables ⇢")
         else:
             self.drawer_open = True
-            self.w.drawer_button.setTitle(u"select tables %s" % unichr(8672))
+            self.w.drawer_button.setTitle("select tables ⇠")
 
     def compare_fonts_callback(self, sender):
 
-        # check for None values
-        # confirm all files and folders exist
+        # check for None values,
+        # confirm that all files and folders exist
         if self.otf_1 is not None and os.path.exists(self.otf_1) and \
             self.otf_2 is not None and os.path.exists(self.otf_2) and \
             self.folder is not None and os.path.exists(self.folder):
@@ -276,7 +262,9 @@ class CompareOTFsDialog(object):
             # get selected tables
             tables = []
             for table, attr, _ in self.tables:
-                exec "value = self.d._%s.get()" % attr
+                # exec("value = self.d._%s.get()" % attr)
+                checkbox = getattr(self.d, '_%s' % attr)
+                value = checkbox.get()
                 if value == True:
                     tables.append(table)
 
@@ -289,7 +277,7 @@ class CompareOTFsDialog(object):
             # display html result
             html_path = os.path.join(self.folder, 'index.html')
             if os.path.exists(html_path):
-                self.w.compare_status.set('%s' % unichr(10003))
+                self.w.compare_status.set('✓')
                 self.w.html_view.setHTMLPath(html_path)
 
     def get_defaults(self):
@@ -300,15 +288,15 @@ class CompareOTFsDialog(object):
 
         if otf_1 is not None and os.path.exists(otf_1):
             self.otf_1 = otf_1
-            self.w.otf_1_status.set('%s' % unichr(10003))
+            self.w.otf_1_status.set('✓')
 
         if otf_2 is not None and os.path.exists(otf_2):
             self.otf_2 = otf_2
-            self.w.otf_2_status.set('%s' % unichr(10003))
+            self.w.otf_2_status.set('✓')
 
         if folder is not None and os.path.exists(folder):
             self.folder = folder
-            self.w.folder_status.set('%s' % unichr(10003))
+            self.w.folder_status.set('✓')
 
 #------
 # run!
